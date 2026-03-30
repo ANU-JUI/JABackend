@@ -26,6 +26,10 @@ public class CachedJobAggregationService {
     public AggregatedJobSearchResponse getJobs(String profileHash, AggregatedJobSearchRequest request) {
         log.info("Redis cache miss for profileHash {}; calling job APIs", profileHash);
         AggregatedJobSearchResponse response = jobAggregationService.fetchJobs(profileHash, request);
+        if(response.jobs().isEmpty()) {
+            log.info("No jobs found for profileHash {}; not caching empty result", profileHash);
+            return response;
+        }
         log.info("Saved {} jobs in Redis cache for profileHash {} with TTL 1 day", response.jobs().size(), profileHash);
         return response;
     }
