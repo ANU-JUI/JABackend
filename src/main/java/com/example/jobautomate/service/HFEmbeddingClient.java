@@ -27,7 +27,7 @@ public class HFEmbeddingClient {
     @Value("${hf.api.key:}")
     private String apiKey;
 
-    @Value("${hf.embedding.url:https://router.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5}")
+    @Value("${hf.embedding.url:https://api-inference.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5}")
     private String url;
 
     public HFEmbeddingClient() {
