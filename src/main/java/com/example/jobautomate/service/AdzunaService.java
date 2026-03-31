@@ -68,7 +68,7 @@ public class AdzunaService implements ExternalJobSearchService {
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()
             .bodyToMono(AdzunaResponse.class)
-            .timeout(Duration.ofSeconds(10))
+            .timeout(Duration.ofSeconds(30))
             .map(response -> mapResponse(response, countryCode))
             .doOnError(exception -> log.warn("Adzuna request failed for query '{}': {}", query, exception.getMessage()))
             .onErrorReturn(List.of());
