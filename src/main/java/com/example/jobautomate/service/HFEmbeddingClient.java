@@ -65,6 +65,7 @@ public class HFEmbeddingClient {
             ResponseEntity<List> response = rest.postForEntity(url, buildEntity(texts), List.class);
             return toVectorList(response.getBody());
         } catch (RestClientException exception) {
+              log.info("HF API KEY PRESENT : {}",apiKey!=null && !apiKey.isBlank());
             log.warn("HuggingFace batch embedding request failed: {}", exception.getMessage());
             return List.of();
         }
