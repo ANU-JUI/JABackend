@@ -39,11 +39,7 @@ public class JobIngestionService {
         this.jobSourceProperties = jobSourceProperties;
     }
 
-    @PostConstruct
-    public void initializeJobs() {
-        refreshJobs();
-    }
-
+   
     @Scheduled(cron = "${app.scheduler.cron}")
     public void refreshJobs() {
 
