@@ -462,7 +462,7 @@ if (!countryFiltered.isEmpty()) {
             .map(job -> toJobView(job, preferences))
             .toList();
 
-        return new JobFeedResponse(availableJobs, List.of(), availableJobs.size(), 0);
+        return new JobFeedResponse(availableJobs, List.of(), availableJobs.size(), 0 , response.useFallback());
     }
 
     private LocalDate resolveDeadline(UnifiedJobDto job) {

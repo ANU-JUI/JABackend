@@ -58,7 +58,7 @@ public class JobMatchingService {
         List<JobView> available = ranked.stream().filter(j -> !j.applied()).toList();
         List<JobView> applied = ranked.stream().filter(JobView::applied).toList();
 
-        return new JobFeedResponse(available, applied, available.size(), applied.size());
+        return new JobFeedResponse(available, applied, available.size(), applied.size(),false);
     }
 
     public JobDetailResponse getJobDetail(Long jobId, UserPreferencesRequest preferences) {

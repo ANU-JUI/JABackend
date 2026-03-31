@@ -6,6 +6,7 @@ public record JobFeedResponse(
     List<JobView> availableJobs,
     List<JobView> appliedJobs,
     int totalAvailableJobs,
-    int totalAppliedJobs
+    int totalAppliedJobs,
+    boolean useFallback
 ) {
 }
