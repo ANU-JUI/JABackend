@@ -22,7 +22,11 @@ public class CachedJobAggregationService {
         this.cacheManager = cacheManager;
     }
 
-    @Cacheable(value = "jobs", key = "'v4:' + #profileHash")
+   @Cacheable(
+    value = "jobs",
+    key = "'v4:' + #profileHash",
+    unless = "#result.jobs().isEmpty()"
+)
     public AggregatedJobSearchResponse getJobs(String profileHash, AggregatedJobSearchRequest request) {
         log.info("Redis cache miss for profileHash {}; calling job APIs", profileHash);
         AggregatedJobSearchResponse response = jobAggregationService.fetchJobs(profileHash, request);
@@ -34,8 +38,20 @@ public class CachedJobAggregationService {
         return response;
     }
 
-    public boolean hasCachedJobs(String profileHash) {
-        Cache cache = cacheManager.getCache("jobs");
-        return cache != null && cache.get("v4:" + profileHash) != null;
-    }
+  public boolean hasCachedJobs(String profileHash) {
+    Cache cache = cacheManager.getCache("jobs");
+
+    if (cache == null) return false;
+
+    Cache.ValueWrapper wrapper = cache.get("v4:" + profileHash);
+
+    if (wrapper == null) return false;
+
+    AggregatedJobSearchResponse response =
+        (AggregatedJobSearchResponse) wrapper.get();
+
+    return response != null
+        && response.jobs() != null
+        && !response.jobs().isEmpty();
+}
 }

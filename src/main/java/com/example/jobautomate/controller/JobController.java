@@ -8,6 +8,7 @@ import com.example.jobautomate.dto.ApplyResponse;
 import com.example.jobautomate.dto.JobDetailResponse;
 import com.example.jobautomate.dto.JobFeedResponse;
 import com.example.jobautomate.dto.UserPreferencesRequest;
+import com.example.jobautomate.model.Job;
 import com.example.jobautomate.service.AnalyticsService;
 import com.example.jobautomate.service.ApplicationService;
 import com.example.jobautomate.service.CachedJobAggregationService;
@@ -66,7 +67,6 @@ public class JobController {
             cachedJobAggregationService.getJobs(profileHash, jobAggregationService.toSearchRequest(preferences));
         return jobAggregationService.toFeedResponse(response, preferences);
     }
-
     @PostMapping("/jobs/live-search")
     public AggregatedJobSearchResponse liveSearch(@Valid @RequestBody AggregatedJobSearchRequest request) {
         String profileHash = userSemanticProfileService.buildProfileHash(request.toUserPreferences());

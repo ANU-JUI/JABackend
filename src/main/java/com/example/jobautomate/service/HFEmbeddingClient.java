@@ -27,7 +27,7 @@ public class HFEmbeddingClient {
     @Value("${hf.api.key:}")
     private String apiKey;
 
-    @Value("${hf.embedding.url:https://api-inference.huggingface.co/models/BAAI/bge-small-en-v1.5}")
+   @Value("${hf.embedding.url:https://router.huggingface.co/hf-inference/models/BAAI/bge-small-en-v1.5}")
     private String url;
 
     public HFEmbeddingClient() {
@@ -50,6 +50,7 @@ public class HFEmbeddingClient {
             ResponseEntity<List> response = rest.postForEntity(url, buildEntity(text), List.class);
             return toVector(response.getBody());
         } catch (RestClientException exception) {
+            log.info("HF API KEY PRESENT : {}",apiKey!=null && !apiKey.isBlank());
             log.warn("HuggingFace single embedding request failed: {}", exception.getMessage());
             return List.of();
         }
