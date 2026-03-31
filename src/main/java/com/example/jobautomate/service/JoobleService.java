@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
+import java.util.Map;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -37,7 +38,7 @@ public class JoobleService implements ExternalJobSearchService {
         return StringUtils.hasText(jooble.getBaseUrl()) && StringUtils.hasText(jooble.getApiKey());
     }
 
-    @Override
+@Override
     public Mono<List<UnifiedJobDto>> searchJobs(List<String> searchQueries) {
         if (!isConfigured()) {
             log.info("Jooble live search skipped because the API key is not configured");
@@ -56,11 +57,27 @@ public class JoobleService implements ExternalJobSearchService {
                 sanitizeQueries(searchQueries).size()
             ));
     }
+@Override
+    public Mono<List<UnifiedJobDto>> searchJobs(Map<String, List<String>> queriesByCountry) {
+        if (!isConfigured()) {
+            log.info("Jooble live search skipped because the API key is not configured");
+            return Mono.just(List.of());
+        }
 
-    private Mono<List<UnifiedJobDto>> fetchByQuery(String query) {
+        return Flux.fromIterable(queriesByCountry.entrySet())
+            .flatMap(entry -> Flux.fromIterable(entry.getValue())
+                .flatMap(query -> fetchByQueryWithCountry(query, entry.getKey())
+                    .flatMapMany(Flux::fromIterable)),
+                properties.getAggregation().getProviderConcurrency()
+            )
+            .collectList();
+    }
+
+    private Mono<List<UnifiedJobDto>> fetchByQueryWithCountry(String query, String country) {
+        String location = StringUtils.hasText(country) ? country : properties.getJooble().getDefaultLocation();
         JoobleRequest request = new JoobleRequest(
             query,
-            properties.getJooble().getDefaultLocation(),
+            location,
             properties.getJooble().getPage(),
             properties.getJooble().getResultsPerPage()
         );
@@ -73,9 +90,13 @@ public class JoobleService implements ExternalJobSearchService {
             .bodyToMono(JoobleResponse.class)
             .timeout(Duration.ofMillis(properties.getJooble().getTimeoutMs()))
             .map(this::mapResponse)
-            .doOnSuccess(jobs -> log.info("Jooble fetched {} jobs for query '{}'", jobs.size(), query))
-            .doOnError(exception -> log.warn("Jooble request failed for query '{}': {}", query, exception.getMessage()))
+            .doOnSuccess(jobs -> log.info("Jooble fetched {} jobs for query '{}' location '{}'", jobs.size(), query, location))
+            .doOnError(exception -> log.warn("Jooble request failed for query '{}' location '{}': {}", query, location, exception.getMessage()))
             .onErrorReturn(List.of());
+    }
+
+    private Mono<List<UnifiedJobDto>> fetchByQuery(String query) {
+        return fetchByQueryWithCountry(query, properties.getJooble().getDefaultLocation());
     }
 
     private List<UnifiedJobDto> mapResponse(JoobleResponse response) {

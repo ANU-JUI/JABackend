@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
+import java.util.Map;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -38,7 +39,7 @@ public class AdzunaService implements ExternalJobSearchService {
             && StringUtils.hasText(adzuna.getBaseUrl());
     }
 
-    @Override
+@Override
     public Mono<List<UnifiedJobDto>> searchJobs(List<String> searchQueries) {
         if (!isConfigured()) {
             log.info("Adzuna live search skipped because credentials are not configured");
@@ -50,6 +51,21 @@ public class AdzunaService implements ExternalJobSearchService {
             .flatMap(query -> Flux.fromIterable(countries)
                 .flatMap(
                     country -> fetchByQuery(query, country).flatMapMany(Flux::fromIterable),
+                    properties.getAggregation().getProviderConcurrency()
+                ))
+            .collectList();
+    }
+    @Override
+    public Mono<List<UnifiedJobDto>> searchJobs(Map<String, List<String>> queriesByCountry) {
+        if (!isConfigured()) {
+            log.info("Adzuna live search skipped because credentials are not configured");
+            return Mono.just(List.of());
+        }
+
+        return Flux.fromIterable(queriesByCountry.entrySet())
+            .flatMap(entry -> Flux.fromIterable(entry.getValue())
+                .flatMap(query -> Flux.fromIterable(entry.getKey().isEmpty() ? properties.getAdzuna().getSearchCountries() : List.of(entry.getKey()))
+                    .flatMap(country -> fetchByQuery(query, country).flatMapMany(Flux::fromIterable)),
                     properties.getAggregation().getProviderConcurrency()
                 ))
             .collectList();

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,7 @@ public class JSearchService implements ExternalJobSearchService {
             && StringUtils.hasText(jsearch.getRapidApiKey());
     }
 
-    @Override
+@Override
     public Mono<List<UnifiedJobDto>> searchJobs(List<String> searchQueries) {
         if (!isConfigured()) {
             log.info("JSearch live search skipped because RapidAPI credentials are not configured");
@@ -57,7 +58,7 @@ public class JSearchService implements ExternalJobSearchService {
         log.info("JSearch will execute {} sequential calls", limitedQueries.size());
 
         return Flux.fromIterable(limitedQueries)
-            .concatMap(query -> fetchByQueryWithDelay(query, failureCount).flatMapMany(Flux::fromIterable))
+            .concatMap(query -> fetchByQuery(query, failureCount).flatMapMany(Flux::fromIterable))
             .collectList()
             .doOnSuccess(jobs -> log.info(
                 "JSearch fetched {} jobs across {} calls with {} failures",
@@ -67,24 +68,39 @@ public class JSearchService implements ExternalJobSearchService {
             ));
     }
 
-    private Mono<List<UnifiedJobDto>> fetchByQueryWithDelay(String query, AtomicInteger failureCount) {
+@Override
+    public Mono<List<UnifiedJobDto>> searchJobs(Map<String, List<String>> queriesByCountry) {
+        if (!isConfigured()) {
+            log.info("JSearch live search skipped because RapidAPI credentials are not configured");
+            return Mono.just(List.of());
+        }
+
+       return Flux.fromIterable(queriesByCountry.entrySet())
+    .concatMap(entry -> Flux.fromIterable(entry.getValue().stream().limit(2).toList())
+        .concatMap(query -> {
+            AtomicInteger failureCount = new AtomicInteger();
+            return fetchByQueryWithDelay(query, failureCount, entry.getKey())
+                .flatMapMany(Flux::fromIterable);
+        }))
+    .collectList();
+    }
+
+    private Mono<List<UnifiedJobDto>> fetchByQueryWithDelay(String query, AtomicInteger failureCount, String country) {
         return Mono.fromCallable(() -> {
                 Thread.sleep(400);
                 return query;
             })
-            .flatMap(delayedQuery -> fetchByQuery(delayedQuery, failureCount));
+            .flatMap(delayedQuery -> fetchByQueryWithCountry(delayedQuery, country, failureCount));
     }
 
-    private Mono<List<UnifiedJobDto>> fetchByQuery(String query, AtomicInteger failureCount) {
+    private Mono<List<UnifiedJobDto>> fetchByQueryWithCountry(String query, String country, AtomicInteger failureCount) {
         return webClient.get()
             .uri(uriBuilder -> uriBuilder
                 .path("/search")
                 .queryParam("query", query)
                 .queryParam("page", properties.getJsearch().getPage())
                 .queryParam("num_pages", properties.getJsearch().getNumPages())
-                .queryParamIfPresent("country", StringUtils.hasText(properties.getJsearch().getCountry())
-                    ? java.util.Optional.of(properties.getJsearch().getCountry())
-                    : java.util.Optional.empty())
+                .queryParam("country", StringUtils.hasText(country) ? country : properties.getJsearch().getCountry())
                 .build())
             .header("X-RapidAPI-Key", properties.getJsearch().getRapidApiKey())
             .accept(MediaType.APPLICATION_JSON)
@@ -92,12 +108,17 @@ public class JSearchService implements ExternalJobSearchService {
             .bodyToMono(JSearchResponse.class)
             .timeout(Duration.ofMillis(properties.getJsearch().getTimeoutMs()))
             .map(this::mapResponse)
-            .doOnSuccess(jobs -> log.info("JSearch fetched {} jobs for query '{}'", jobs.size(), query))
+            .doOnSuccess(jobs -> log.info("JSearch fetched {} jobs for query '{}' country '{}'", jobs.size(), query, country))
             .doOnError(exception -> {
                 failureCount.incrementAndGet();
-                log.warn("JSearch request failed for query '{}': {}", query, exception.getMessage());
+                log.warn("JSearch request failed for query '{}' country '{}': {}", query, country, exception.getMessage());
             })
             .onErrorReturn(List.of());
+    }
+
+    private Mono<List<UnifiedJobDto>> fetchByQuery(String query, AtomicInteger failureCount) {
+        return Mono.fromCallable(() -> properties.getJsearch().getCountry())
+            .flatMap(country -> fetchByQueryWithCountry(query, country, failureCount));
     }
 
     private List<UnifiedJobDto> mapResponse(JSearchResponse response) {

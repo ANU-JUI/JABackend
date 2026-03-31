@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,9 +67,22 @@ public class JobAggregationService {
             throw new IllegalArgumentException("At least one preferred role, skill, or search query is required");
         }
 
-        Mono<List<UnifiedJobDto>> adzunaMono = adzunaService.searchJobs(queries);
-        Mono<List<UnifiedJobDto>> jsearchMono = jSearchService.searchJobs(queries);
-        Mono<List<UnifiedJobDto>> joobleMono = joobleService.searchJobs(queries);
+        Map<String, List<String>> queriesByCountry;
+        if (request.countries() == null || request.countries().isEmpty()) {
+            queriesByCountry = Map.of("global", queries);
+        } else {
+            queriesByCountry = request.countries().stream()
+                .collect(Collectors.toMap(
+                    country -> country,
+                    country -> queries,
+                    (existing, replacement) -> existing,
+                    HashMap::new
+                ));
+        }
+
+        Mono<List<UnifiedJobDto>> adzunaMono = adzunaService.searchJobs(queriesByCountry);
+        Mono<List<UnifiedJobDto>> jsearchMono = jSearchService.searchJobs(queriesByCountry);
+        Mono<List<UnifiedJobDto>> joobleMono = joobleService.searchJobs(queriesByCountry);
 
         List<UnifiedJobDto> merged = Mono.zip(adzunaMono, jsearchMono, joobleMono)
             .map(tuple -> {
@@ -141,6 +156,15 @@ if (!countryFiltered.isEmpty()) {
         );
         return response;
     }
+    private Map<String, List<String>> buildQueriesByCountry(AggregatedJobSearchRequest request) {
+    List<String> queries = resolveQueries(request);
+
+    return request.countries().stream()
+        .collect(Collectors.toMap(
+            country -> country,
+            country -> queries
+        ));
+}
     private boolean matchesCountry(UnifiedJobDto job, AggregatedJobSearchRequest request) {
 
     if (request.countries() == null || request.countries().isEmpty()) {
