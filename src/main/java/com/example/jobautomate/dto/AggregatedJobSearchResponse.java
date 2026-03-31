@@ -7,6 +7,7 @@ public record AggregatedJobSearchResponse(
     int totalFetched,
     int totalAfterDeduplication,
     int totalAfterFiltering,
-    double similarityThreshold
+    double similarityThreshold,
+    boolean useFallback
 ) {
 }

@@ -88,9 +88,25 @@ public class JobAggregationService {
 
         int totalFetched = merged.size();
         List<UnifiedJobDto> deduplicated = deduplicate(merged);
-        List<UnifiedJobDto> relevant = deduplicated.stream()
-            .filter(job -> isRelevantJob(job, request))
-            .toList();
+        List<UnifiedJobDto> countryFiltered = deduplicated.stream()
+    .filter(job -> isRelevantJob(job, request))
+    .filter(job -> matchesCountry(job, request))
+    .toList();
+
+List<UnifiedJobDto> relevant;
+
+// ✅ If country jobs exist → use them
+if (!countryFiltered.isEmpty()) {
+    log.info("Using country-specific jobs: {}", countryFiltered.size());
+    relevant = countryFiltered;
+} else {
+    // 🔥 Fallback to global
+    log.warn("No jobs found for selected countries → falling back to global jobs");
+
+    relevant = deduplicated.stream()
+        .filter(job -> isRelevantJob(job, request))
+        .toList();
+}
         List<UnifiedJobDto> scored = scoreJobs(relevant, request);
         double threshold = resolveThreshold(request.similarityThreshold());
 
@@ -113,17 +129,32 @@ public class JobAggregationService {
             ranked.size(),
             threshold
         );
+        boolean useFallback = countryFiltered.isEmpty();
 
         AggregatedJobSearchResponse response = new AggregatedJobSearchResponse(
             ranked,
             totalFetched,
             deduplicated.size(),
             ranked.size(),
-            threshold
+            threshold,
+            useFallback
         );
         return response;
     }
+    private boolean matchesCountry(UnifiedJobDto job, AggregatedJobSearchRequest request) {
 
+    if (request.countries() == null || request.countries().isEmpty()) {
+        return true;
+    }
+
+    String jobLocation =
+        normalize(job.location());
+
+    return request.countries().stream()
+        .anyMatch(country ->
+            jobLocation.contains(country.toLowerCase())
+        );
+}
     private List<UnifiedJobDto> deduplicate(List<UnifiedJobDto> jobs) {
         Map<String, UnifiedJobDto> deduped = new LinkedHashMap<>();
         for (UnifiedJobDto job : jobs) {
