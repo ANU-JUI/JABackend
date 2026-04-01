@@ -447,7 +447,7 @@ if (!countryFiltered.isEmpty()) {
             .toList();
 
         return new JobView(
-            job.applyUrl(),
+            job.id(),
             job.title(),
             job.company(),
             job.location(),

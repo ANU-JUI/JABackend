@@ -121,6 +121,7 @@ public class AdzunaService implements ExternalJobSearchService {
             String description = StringUtils.hasText(result.description()) ? result.description().trim() : result.title();
 
             jobs.add(new UnifiedJobDto(
+                result.id(),
                 result.title().trim(),
                 company,
                 location,

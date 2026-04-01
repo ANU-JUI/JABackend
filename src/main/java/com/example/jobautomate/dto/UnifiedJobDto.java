@@ -1,6 +1,7 @@
 package com.example.jobautomate.dto;
 
 public record UnifiedJobDto(
+    Long id,
     String title,
     String company,
     String location,
@@ -13,10 +14,10 @@ public record UnifiedJobDto(
 ) {
 
     public UnifiedJobDto withSimilarityScore(double updatedSimilarityScore) {
-        return new UnifiedJobDto(title, company, location, description, applyUrl, source, publishedAt, updatedSimilarityScore, finalScore);
+        return new UnifiedJobDto(id,title, company, location, description, applyUrl, source, publishedAt, updatedSimilarityScore, finalScore);
     }
 
     public UnifiedJobDto withFinalScore(double updatedFinalScore) {
-        return new UnifiedJobDto(title, company, location, description, applyUrl, source, publishedAt, similarityScore, updatedFinalScore);
+        return new UnifiedJobDto(id,title, company, location, description, applyUrl, source, publishedAt, similarityScore, updatedFinalScore);
     }
 }

@@ -112,6 +112,7 @@ public class JoobleService implements ExternalJobSearchService {
             }
 
             jobs.add(new UnifiedJobDto(
+                result.id(),
                 result.title().trim(),
                 StringUtils.hasText(result.company()) ? result.company().trim() : "Unknown company",
                 StringUtils.hasText(result.location()) ? result.location().trim() : "Remote",

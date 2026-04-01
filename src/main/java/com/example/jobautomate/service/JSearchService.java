@@ -133,6 +133,7 @@ public class JSearchService implements ExternalJobSearchService {
             }
 
             jobs.add(new UnifiedJobDto(
+                result.id(),
                 result.jobTitle().trim(),
                 StringUtils.hasText(result.employerName()) ? result.employerName().trim() : "Unknown company",
                 buildLocation(result.jobCity(), result.jobState(), result.jobCountry()),
