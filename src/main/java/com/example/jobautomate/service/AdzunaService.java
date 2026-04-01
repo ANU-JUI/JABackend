@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import com.example.jobautomate.service.CountryMapper;
 import org.springframework.web.reactive.function.client.WebClient;
 import java.util.Map;
 import reactor.core.publisher.Flux;
@@ -64,11 +65,13 @@ public class AdzunaService implements ExternalJobSearchService {
 
         return Flux.fromIterable(queriesByCountry.entrySet())
             .flatMap(entry -> Flux.fromIterable(entry.getValue())
-                .flatMap(query -> Flux.fromIterable(entry.getKey().isEmpty() ? properties.getAdzuna().getSearchCountries() : List.of(entry.getKey()))
-                    .flatMap(country -> fetchByQuery(query, country).flatMapMany(Flux::fromIterable)),
-                    properties.getAggregation().getProviderConcurrency()
-                ))
-            .collectList();
+                .flatMap(query -> {
+                    List<String> countries = entry.getKey().isEmpty() ? properties.getAdzuna().getSearchCountries() : List.of(CountryMapper.toCountryCode(entry.getKey()));
+                    return Flux.fromIterable(countries)
+                        .flatMap(countryCode -> fetchByQuery(query, countryCode).flatMapMany(Flux::fromIterable));
+                }),
+                properties.getAggregation().getProviderConcurrency()
+            ).collectList();
     }
 
     private Mono<List<UnifiedJobDto>> fetchByQuery(String query, String countryCode) {

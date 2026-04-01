@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import com.example.jobautomate.service.CountryMapper;
 import org.springframework.web.reactive.function.client.WebClient;
 import java.util.Map;
 import reactor.core.publisher.Flux;
@@ -74,10 +75,10 @@ public class JoobleService implements ExternalJobSearchService {
     }
 
     private Mono<List<UnifiedJobDto>> fetchByQueryWithCountry(String query, String country) {
-        String location = StringUtils.hasText(country) ? country : properties.getJooble().getDefaultLocation();
+        String locationCode = StringUtils.hasText(country) ? CountryMapper.toCountryCode(country) : properties.getJooble().getDefaultLocation();
         JoobleRequest request = new JoobleRequest(
             query,
-            location,
+            locationCode,
             properties.getJooble().getPage(),
             properties.getJooble().getResultsPerPage()
         );
@@ -90,8 +91,8 @@ public class JoobleService implements ExternalJobSearchService {
             .bodyToMono(JoobleResponse.class)
             .timeout(Duration.ofMillis(properties.getJooble().getTimeoutMs()))
             .map(this::mapResponse)
-            .doOnSuccess(jobs -> log.info("Jooble fetched {} jobs for query '{}' location '{}'", jobs.size(), query, location))
-            .doOnError(exception -> log.warn("Jooble request failed for query '{}' location '{}': {}", query, location, exception.getMessage()))
+            .doOnSuccess(jobs -> log.info("Jooble fetched {} jobs for query '{}' location '{}'", jobs.size(), query, locationCode))
+            .doOnError(exception -> log.warn("Jooble request failed for query '{}' location '{}': {}", query, locationCode, exception.getMessage()))
             .onErrorReturn(List.of());
     }
 
