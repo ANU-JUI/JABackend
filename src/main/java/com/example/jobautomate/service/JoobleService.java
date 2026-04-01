@@ -75,7 +75,7 @@ public class JoobleService implements ExternalJobSearchService {
     }
 
     private Mono<List<UnifiedJobDto>> fetchByQueryWithCountry(String query, String country) {
-        String locationCode = StringUtils.hasText(country) ? CountryMapper.toCountryCode(country) : properties.getJooble().getDefaultLocation();
+        String locationCode = StringUtils.hasText(country) ? CountryMapper.getCode(country) : properties.getJooble().getDefaultLocation();
         JoobleRequest request = new JoobleRequest(
             query,
             locationCode,

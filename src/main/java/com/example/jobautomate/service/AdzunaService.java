@@ -63,16 +63,24 @@ public class AdzunaService implements ExternalJobSearchService {
             return Mono.just(List.of());
         }
 
-        return Flux.fromIterable(queriesByCountry.entrySet())
-            .flatMap(entry -> Flux.fromIterable(entry.getValue())
-                .flatMap(query -> {
-                    List<String> countries = entry.getKey().isEmpty() ? properties.getAdzuna().getSearchCountries() : List.of(CountryMapper.toCountryCode(entry.getKey()));
-                    return Flux.fromIterable(countries)
-                        .flatMap(countryCode -> fetchByQuery(query, countryCode).flatMapMany(Flux::fromIterable));
-                }),
-                properties.getAggregation().getProviderConcurrency()
-            ).collectList();
-    }
+      return Flux.fromIterable(queriesByCountry.entrySet())
+    .flatMap(entry -> 
+        Flux.fromIterable(entry.getValue())
+            .flatMap(query -> {
+                List<String> countries = entry.getKey().isEmpty()
+                    ? properties.getAdzuna().getSearchCountries()
+                    : List.of(CountryMapper.getCode(entry.getKey()));
+
+                return Flux.fromIterable(countries)
+                    .flatMap(countryCode -> 
+                        fetchByQuery(query, countryCode)
+                            .flatMapMany(Flux::fromIterable)
+                    );
+            }),
+        properties.getAggregation().getProviderConcurrency()
+    )
+    .collectList();
+}
 
     private Mono<List<UnifiedJobDto>> fetchByQuery(String query, String countryCode) {
         return webClient.get()
