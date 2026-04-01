@@ -152,6 +152,7 @@ public class JoobleService implements ExternalJobSearchService {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record JoobleJobResult(
+        Long id,
         String title,
         String location,
         String snippet,

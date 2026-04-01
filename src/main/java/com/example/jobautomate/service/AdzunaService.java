@@ -151,6 +151,7 @@ public class AdzunaService implements ExternalJobSearchService {
     }
 
     public record AdzunaJobResult(
+        Long id,
         String title,
         String description,
         @JsonProperty("redirect_url") String redirectUrl,

@@ -187,6 +187,7 @@ public class JSearchService implements ExternalJobSearchService {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record JSearchJobResult(
+        @JsonProperty("job_id") Long id,
         @JsonProperty("job_title") String jobTitle,
         @JsonProperty("employer_name") String employerName,
         @JsonProperty("job_city") String jobCity,
