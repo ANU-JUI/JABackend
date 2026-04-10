@@ -3,7 +3,6 @@ package com.example.jobautomate.service;
 import com.example.jobautomate.dto.ApplyResponse;
 import com.example.jobautomate.model.ApplicationRecord;
 import com.example.jobautomate.repository.ApplicationRepository;
-import com.example.jobautomate.repository.JobRepository;
 import java.time.OffsetDateTime;
 import org.springframework.stereotype.Service;
 
@@ -11,16 +10,12 @@ import org.springframework.stereotype.Service;
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
-    private final JobRepository jobRepository;
 
-    public ApplicationService(ApplicationRepository applicationRepository, JobRepository jobRepository) {
+    public ApplicationService(ApplicationRepository applicationRepository) {
         this.applicationRepository = applicationRepository;
-        this.jobRepository = jobRepository;
     }
 
     public ApplyResponse apply(String userId, Long jobId) {
-        jobRepository.findById(jobId).orElseThrow(() -> new IllegalArgumentException("Job not found"));
-
         ApplicationRecord application = applicationRepository.findByUserIdAndJobId(userId, jobId)
             .orElseGet(ApplicationRecord::new);
         application.setUserId(userId);
