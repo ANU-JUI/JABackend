@@ -9,6 +9,7 @@ import com.example.jobautomate.dto.JobDetailResponse;
 import com.example.jobautomate.dto.JobFeedResponse;
 import com.example.jobautomate.dto.UserPreferencesRequest;
 import com.example.jobautomate.model.Job;
+import com.example.jobautomate.repository.JobRepository;
 import com.example.jobautomate.service.AnalyticsService;
 import com.example.jobautomate.service.ApplicationService;
 import com.example.jobautomate.service.CachedJobAggregationService;
@@ -37,6 +38,7 @@ public class JobController {
     private final AnalyticsService analyticsService;
     private final ApplicationService applicationService;
     private final JobIngestionService jobIngestionService;
+    private final JobRepository jobRepository;
 
     public JobController(
         JobMatchingService jobMatchingService,
@@ -45,7 +47,7 @@ public class JobController {
         UserSemanticProfileService userSemanticProfileService,
         AnalyticsService analyticsService,
         ApplicationService applicationService,
-        JobIngestionService jobIngestionService
+        JobIngestionService jobIngestionService, JobRepository jobRepository
     ) {
         this.jobMatchingService = jobMatchingService;
         this.cachedJobAggregationService = cachedJobAggregationService;
@@ -54,6 +56,7 @@ public class JobController {
         this.analyticsService = analyticsService;
         this.applicationService = applicationService;
         this.jobIngestionService = jobIngestionService;
+        this.jobRepository = jobRepository;
     }
 
     @PostMapping("/jobs/feed")
@@ -83,8 +86,9 @@ public class JobController {
     }
 
     @PostMapping("/jobs/{jobId}/apply")
-    public ApplyResponse apply(@PathVariable Long jobId, @Valid @RequestBody ApplyRequest request) {
-        return applicationService.apply(request.userId(), jobId);
+    public ApplyResponse apply(@PathVariable String jobId, @Valid @RequestBody ApplyRequest request) {
+        Job job = resolveJob(jobId);
+        return applicationService.apply(request.userId(), job.getId());
     }
 
     @PostMapping("/jobs/refresh")
@@ -94,7 +98,7 @@ public class JobController {
 
     @GetMapping("/jobs/{jobId}")
     public JobDetailResponse detail(
-        @PathVariable Long jobId,
+        @PathVariable("jobId") String jobId,
         @RequestParam String userId,
         @RequestParam List<String> preferredRoles,
         @RequestParam List<String> preferredJobTypes,
@@ -102,9 +106,28 @@ public class JobController {
         @RequestParam List<String> countries,
         @RequestParam List<String> skills
     ) {
+        Job job = resolveJob(jobId);
         return jobMatchingService.getJobDetail(
-            jobId,
+            job.getId(),
             new UserPreferencesRequest(userId, preferredRoles, preferredJobTypes, experienceYears, countries, skills, null)
         );
+    }
+
+    private Job resolveJob(String identifier) {
+        if (identifier == null || identifier.isBlank()) {
+            throw new IllegalArgumentException("Job id is required");
+        }
+
+        return jobRepository.findByExternalId(identifier)
+            .or(() -> parseLong(identifier).flatMap(jobRepository::findById))
+            .orElseThrow(() -> new IllegalArgumentException("Job not found"));
+    }
+
+    private java.util.Optional<Long> parseLong(String value) {
+        try {
+            return java.util.Optional.of(Long.parseLong(value));
+        } catch (NumberFormatException ignored) {
+            return java.util.Optional.empty();
+        }
     }
 }
