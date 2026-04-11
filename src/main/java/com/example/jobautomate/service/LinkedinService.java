@@ -66,11 +66,13 @@ public class LinkedinService implements ExternalJobSearchService {
         }
 
         LinkedinQueryOptions dynamicOptions = resolveDynamicOptions(request);
+        int maxQueriesPerCountry = Math.max(1, properties.getLinkedin().getMaxQueriesPerCountry());
+        int requestConcurrency = Math.max(1, properties.getLinkedin().getRequestConcurrency());
 
         return Flux.fromIterable(queriesByCountry.entrySet())
-            .flatMap(entry -> Flux.fromIterable(sanitizeQueries(entry.getValue()))
-                .flatMap(query -> fetchByQueryAndLocation(query, entry.getKey(), dynamicOptions).flatMapMany(Flux::fromIterable)),
-                properties.getAggregation().getProviderConcurrency())
+            .flatMap(entry -> Flux.fromIterable(sanitizeQueries(entry.getValue()).stream().limit(maxQueriesPerCountry).toList())
+                .concatMap(query -> fetchByQueryAndLocation(query, entry.getKey(), dynamicOptions).flatMapMany(Flux::fromIterable)),
+                requestConcurrency)
             .collectList();
     }
 

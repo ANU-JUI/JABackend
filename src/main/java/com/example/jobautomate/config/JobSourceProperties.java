@@ -258,6 +258,8 @@ public class JobSourceProperties {
         private String sortBy = "recent";
         private boolean hasVerification = false;
         private boolean under10Applicants = false;
+        private int maxQueriesPerCountry = 2;
+        private int requestConcurrency = 1;
         private int timeoutMs = 15000;
 
         public boolean isEnabled() {
@@ -370,6 +372,22 @@ public class JobSourceProperties {
 
         public void setUnder10Applicants(boolean under10Applicants) {
             this.under10Applicants = under10Applicants;
+        }
+
+        public int getMaxQueriesPerCountry() {
+            return maxQueriesPerCountry;
+        }
+
+        public void setMaxQueriesPerCountry(int maxQueriesPerCountry) {
+            this.maxQueriesPerCountry = maxQueriesPerCountry;
+        }
+
+        public int getRequestConcurrency() {
+            return requestConcurrency;
+        }
+
+        public void setRequestConcurrency(int requestConcurrency) {
+            this.requestConcurrency = requestConcurrency;
         }
 
         public int getTimeoutMs() {
