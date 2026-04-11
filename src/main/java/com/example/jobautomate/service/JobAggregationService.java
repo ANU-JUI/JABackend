@@ -35,6 +35,7 @@ public class JobAggregationService {
     private final AdzunaService adzunaService;
     private final JSearchService jSearchService;
     private final JoobleService joobleService;
+    private final LinkedinService linkedinService;
     private final JobSemanticDataService jobSemanticDataService;
     private final JobParsingService jobParsingService;
     private final HFEmbeddingClient hfEmbeddingClient;
@@ -45,6 +46,7 @@ public class JobAggregationService {
         AdzunaService adzunaService,
         JSearchService jSearchService,
         JoobleService joobleService,
+        LinkedinService linkedinService,
         JobSemanticDataService jobSemanticDataService,
         JobParsingService jobParsingService,
         HFEmbeddingClient hfEmbeddingClient,
@@ -54,6 +56,7 @@ public class JobAggregationService {
         this.adzunaService = adzunaService;
         this.jSearchService = jSearchService;
         this.joobleService = joobleService;
+        this.linkedinService = linkedinService;
         this.jobSemanticDataService = jobSemanticDataService;
         this.jobParsingService = jobParsingService;
         this.hfEmbeddingClient = hfEmbeddingClient;
@@ -83,19 +86,22 @@ public class JobAggregationService {
         Mono<List<UnifiedJobDto>> adzunaMono = adzunaService.searchJobs(queriesByCountry);
         Mono<List<UnifiedJobDto>> jsearchMono = jSearchService.searchJobs(queriesByCountry);
         Mono<List<UnifiedJobDto>> joobleMono = joobleService.searchJobs(queriesByCountry);
+        Mono<List<UnifiedJobDto>> linkedinMono = linkedinService.searchJobs(queriesByCountry, request);
 
-        List<UnifiedJobDto> merged = Mono.zip(adzunaMono, jsearchMono, joobleMono)
+        List<UnifiedJobDto> merged = Mono.zip(adzunaMono, jsearchMono, joobleMono, linkedinMono)
             .map(tuple -> {
                 log.info(
-                    "Provider fetch summary - Adzuna: {}, JSearch: {}, Jooble: {}",
+                    "Provider fetch summary - Adzuna: {}, JSearch: {}, Jooble: {}, LinkedIn: {}",
                     tuple.getT1().size(),
                     tuple.getT2().size(),
-                    tuple.getT3().size()
+                    tuple.getT3().size(),
+                    tuple.getT4().size()
                 );
                 List<UnifiedJobDto> allJobs = new ArrayList<>();
                 allJobs.addAll(tuple.getT1());
                 allJobs.addAll(tuple.getT2());
                 allJobs.addAll(tuple.getT3());
+                allJobs.addAll(tuple.getT4());
                 return allJobs;
             })
             .blockOptional()

@@ -11,6 +11,7 @@ public class JobSourceProperties {
     private final Adzuna adzuna = new Adzuna();
     private final JSearch jsearch = new JSearch();
     private final Jooble jooble = new Jooble();
+    private final Linkedin linkedin = new Linkedin();
     private final Aggregation aggregation = new Aggregation();
 
     public String getProvider() {
@@ -39,6 +40,10 @@ public class JobSourceProperties {
 
     public Jooble getJooble() {
         return jooble;
+    }
+
+    public Linkedin getLinkedin() {
+        return linkedin;
     }
 
     public Aggregation getAggregation() {
@@ -226,6 +231,145 @@ public class JobSourceProperties {
 
         public void setDefaultLocation(String defaultLocation) {
             this.defaultLocation = defaultLocation;
+        }
+
+        public int getTimeoutMs() {
+            return timeoutMs;
+        }
+
+        public void setTimeoutMs(int timeoutMs) {
+            this.timeoutMs = timeoutMs;
+        }
+    }
+
+    public static class Linkedin {
+
+        private boolean enabled = false;
+        private String baseUrl = "http://localhost:5050";
+        private String endpoint = "/jobs";
+        private String defaultLocation = "India";
+        private int limit = 25;
+        private int page = 0;
+        private String dateSincePosted = "past week";
+        private String jobType = "";
+        private String remoteFilter = "";
+        private String salary = "";
+        private String experienceLevel = "";
+        private String sortBy = "recent";
+        private boolean hasVerification = false;
+        private boolean under10Applicants = false;
+        private int timeoutMs = 15000;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+        }
+
+        public String getEndpoint() {
+            return endpoint;
+        }
+
+        public void setEndpoint(String endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        public String getDefaultLocation() {
+            return defaultLocation;
+        }
+
+        public void setDefaultLocation(String defaultLocation) {
+            this.defaultLocation = defaultLocation;
+        }
+
+        public int getLimit() {
+            return limit;
+        }
+
+        public void setLimit(int limit) {
+            this.limit = limit;
+        }
+
+        public int getPage() {
+            return page;
+        }
+
+        public void setPage(int page) {
+            this.page = page;
+        }
+
+        public String getDateSincePosted() {
+            return dateSincePosted;
+        }
+
+        public void setDateSincePosted(String dateSincePosted) {
+            this.dateSincePosted = dateSincePosted;
+        }
+
+        public String getJobType() {
+            return jobType;
+        }
+
+        public void setJobType(String jobType) {
+            this.jobType = jobType;
+        }
+
+        public String getRemoteFilter() {
+            return remoteFilter;
+        }
+
+        public void setRemoteFilter(String remoteFilter) {
+            this.remoteFilter = remoteFilter;
+        }
+
+        public String getSalary() {
+            return salary;
+        }
+
+        public void setSalary(String salary) {
+            this.salary = salary;
+        }
+
+        public String getExperienceLevel() {
+            return experienceLevel;
+        }
+
+        public void setExperienceLevel(String experienceLevel) {
+            this.experienceLevel = experienceLevel;
+        }
+
+        public String getSortBy() {
+            return sortBy;
+        }
+
+        public void setSortBy(String sortBy) {
+            this.sortBy = sortBy;
+        }
+
+        public boolean isHasVerification() {
+            return hasVerification;
+        }
+
+        public void setHasVerification(boolean hasVerification) {
+            this.hasVerification = hasVerification;
+        }
+
+        public boolean isUnder10Applicants() {
+            return under10Applicants;
+        }
+
+        public void setUnder10Applicants(boolean under10Applicants) {
+            this.under10Applicants = under10Applicants;
         }
 
         public int getTimeoutMs() {
