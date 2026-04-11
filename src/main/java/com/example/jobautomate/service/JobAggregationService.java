@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -249,6 +251,10 @@ if (!countryFiltered.isEmpty()) {
             return false;
         }
 
+        if (isTechUser(request) && !matchesPreferredSignals(job, request)) {
+            return false;
+        }
+
         return !isTechUser(request) || !isNonTechJob(job);
     }
 
@@ -304,6 +310,17 @@ if (!countryFiltered.isEmpty()) {
     }
 
     private String deduplicationKey(UnifiedJobDto job) {
+        if ("linkedin".equals(normalize(job.source()))) {
+            return "linkedin|"
+                + normalize(job.title()) + "|"
+                + normalize(job.company()) + "|"
+                + normalizeLinkedinLocation(job.location());
+        }
+
+        String normalizedApplyUrl = normalizeApplyUrl(job.applyUrl());
+        if (StringUtils.hasText(normalizedApplyUrl)) {
+            return "url|" + normalizedApplyUrl;
+        }
         return normalize(job.title()) + "|" + normalize(job.company()) + "|" + normalize(job.location());
     }
 
@@ -409,7 +426,9 @@ if (!countryFiltered.isEmpty()) {
         boolean hasNonTechSignals = containsAny(
             text,
             "sales", "marketing", "accountant", "hr", "human resources", "recruiter", "teacher",
-            "customer service", "business development", "operations executive", "telecaller", "finance"
+            "customer service", "business development", "operations executive", "telecaller", "finance",
+            "nurse", "registered nurse", "physician", "practitioner", "medical", "hospital", "healthcare",
+            "clinical", "pharmacist", "care assistant", "dentist", "doctor"
         );
         boolean hasTechSignals = containsAny(
             text,
@@ -426,6 +445,73 @@ if (!countryFiltered.isEmpty()) {
             }
         }
         return false;
+    }
+
+    private boolean matchesPreferredSignals(UnifiedJobDto job, AggregatedJobSearchRequest request) {
+        String jobText = normalize(job.title()) + " " + normalize(job.description());
+        Set<String> phrases = Stream.concat(
+                request.preferredRoles().stream(),
+                request.skills().stream()
+            )
+            .filter(StringUtils::hasText)
+            .map(this::normalize)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (phrases.isEmpty()) {
+            return true;
+        }
+
+        for (String phrase : phrases) {
+            if (jobText.contains(phrase)) {
+                return true;
+            }
+        }
+
+        Set<String> tokens = phrases.stream()
+            .flatMap(phrase -> List.of(phrase.split("\\s+")).stream())
+            .filter(token -> token.length() >= 3)
+            .filter(token -> !containsAny(token, "and", "for", "with", "the", "job", "role"))
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        for (String token : tokens) {
+            if (jobText.contains(token)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalizeApplyUrl(String url) {
+        if (!StringUtils.hasText(url)) {
+            return "";
+        }
+        String value = normalize(url);
+        int queryIndex = value.indexOf('?');
+        if (queryIndex >= 0) {
+            value = value.substring(0, queryIndex);
+        }
+        int hashIndex = value.indexOf('#');
+        if (hashIndex >= 0) {
+            value = value.substring(0, hashIndex);
+        }
+        return value;
+    }
+
+    private String normalizeLinkedinLocation(String location) {
+        String value = normalize(location);
+        if (!StringUtils.hasText(value)) {
+            return "remote";
+        }
+
+        String primary = value.split(",")[0].trim();
+        return primary
+            .replace(" north", "")
+            .replace(" south", "")
+            .replace(" east", "")
+            .replace(" west", "")
+            .replace(" county", "")
+            .replace(" district", "")
+            .trim();
     }
 
     private OffsetDateTime parsePublishedAt(String publishedAt) {
