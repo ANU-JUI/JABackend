@@ -138,6 +138,7 @@ public class JSearchService implements ExternalJobSearchService {
                 StringUtils.hasText(result.employerName()) ? result.employerName().trim() : "Unknown company",
                 buildLocation(result.jobCity(), result.jobState(), result.jobCountry()),
                 StringUtils.hasText(result.jobDescription()) ? result.jobDescription().trim() : result.jobTitle().trim(),
+                null,
                 resolveApplyUrl(result),
                 "JSearch",
                 result.jobPostedAtDatetimeUtc(),

@@ -141,7 +141,9 @@ public class JobController {
             unifiedJob.title(),
             unifiedJob.company(),
             unifiedJob.location(),
-            matchedView.map(JobView::experienceRequired).orElse(null),
+            unifiedJob.experienceRequired() != null
+                ? unifiedJob.experienceRequired()
+                : matchedView.map(JobView::experienceRequired).orElse(null),
             matchedView.map(JobView::jobType).orElse("Source"),
             matchedView.map(JobView::deadline).orElse(null),
             unifiedJob.applyUrl(),

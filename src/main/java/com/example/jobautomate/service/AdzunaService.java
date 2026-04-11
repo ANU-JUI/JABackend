@@ -126,6 +126,7 @@ public class AdzunaService implements ExternalJobSearchService {
                 company,
                 location,
                 description,
+                null,
                 result.redirectUrl(),
                 "Adzuna",
                 result.created(),

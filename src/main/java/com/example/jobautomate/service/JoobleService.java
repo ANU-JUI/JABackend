@@ -117,6 +117,7 @@ public class JoobleService implements ExternalJobSearchService {
                 StringUtils.hasText(result.company()) ? result.company().trim() : "Unknown company",
                 StringUtils.hasText(result.location()) ? result.location().trim() : "Remote",
                 StringUtils.hasText(result.snippet()) ? result.snippet().trim() : result.title().trim(),
+                null,
                 result.link(),
                 "Jooble",
                 result.updated(),

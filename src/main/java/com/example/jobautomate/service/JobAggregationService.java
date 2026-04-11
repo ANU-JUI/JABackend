@@ -102,7 +102,8 @@ public class JobAggregationService {
             .orElse(List.of());
 
         int totalFetched = merged.size();
-        List<UnifiedJobDto> deduplicated = deduplicate(merged);
+        List<UnifiedJobDto> withExperience = enrichExperience(merged);
+        List<UnifiedJobDto> deduplicated = deduplicate(withExperience);
         List<UnifiedJobDto> countryFiltered = deduplicated.stream()
     .filter(job -> isRelevantJob(job, request))
     .filter(job -> matchesCountry(job, request))
@@ -235,7 +236,9 @@ if (!countryFiltered.isEmpty()) {
             return false;
         }
 
-        Integer experienceRequired = jobParsingService.extractExperienceYears(job.title(), job.description()).orElse(null);
+        Integer experienceRequired = job.experienceRequired() != null
+            ? job.experienceRequired()
+            : jobParsingService.extractExperienceYears(job.title(), job.description()).orElse(null);
         if (experienceRequired != null && experienceRequired > 3) {
             return false;
         }
@@ -446,12 +449,16 @@ if (!countryFiltered.isEmpty()) {
             .filter(skill -> userSkills.stream().noneMatch(userSkill -> userSkill.equalsIgnoreCase(skill)))
             .toList();
 
+        Integer experienceRequired = job.experienceRequired() != null
+            ? job.experienceRequired()
+            : jobParsingService.extractExperienceYears(job.title(), job.description()).orElse(null);
+
         return new JobView(
             job.id(),
             job.title(),
             job.company(),
             job.location(),
-            jobParsingService.extractExperienceYears(job.title(), job.description()).orElse(null),
+            experienceRequired,
             "Source",
             resolveDeadline(job),
             job.applyUrl(),
@@ -515,5 +522,17 @@ if (!countryFiltered.isEmpty()) {
 
         log.info("Final source counts {}", counts);
         log.info("Final source sample {}", sampleSources);
+    }
+
+    private List<UnifiedJobDto> enrichExperience(List<UnifiedJobDto> jobs) {
+        return jobs.stream()
+            .map(job -> {
+                if (job.experienceRequired() != null) {
+                    return job;
+                }
+                Integer extracted = jobParsingService.extractExperienceYears(job.title(), job.description()).orElse(null);
+                return job.withExperienceRequired(extracted);
+            })
+            .toList();
     }
 }
